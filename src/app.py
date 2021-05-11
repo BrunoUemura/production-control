@@ -12,36 +12,36 @@ import pytesseract
 pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract'
 
 images_path = [
-    'images/platesImages/Slide1.jpg',
-    'images/platesImages/Slide2.jpg',
-    'images/platesImages/Slide3.jpg',
-    'images/platesImages/Slide4.jpg',
-    'images/platesImages/Slide5.jpg',
-    'images/platesImages/Slide6.jpg',
-    'images/platesImages/Slide7.jpg',
-    'images/platesImages/Slide8.jpg',
-    'images/platesImages/Slide9.jpg',
-    'images/platesImages/Slide10.jpg',
-    'images/platesImages/Slide11.jpg',
-    'images/platesImages/Slide12.jpg',
-    'images/platesImagesError/Slide1.jpg',
-    'images/platesImagesError/Slide2.jpg',
-    'images/platesImagesError/Slide3.jpg',
-    'images/platesImagesError/Slide4.jpg',
-    'images/platesImagesError/Slide5.jpg',
-    'images/platesImagesError/Slide6.jpg',
-    'images/platesImagesError/Slide7.jpg',
-    'images/platesImagesError/Slide8.jpg',
-    'images/platesImagesError/Slide9.jpg',
-    'images/platesImagesError/Slide10.jpg',
-    'images/platesImagesError/Slide11.jpg',
-    'images/platesImagesError/Slide12.jpg'
+    '../images/platesImages/Slide1.jpg',
+    '../images/platesImages/Slide2.jpg',
+    '../images/platesImages/Slide3.jpg',
+    '../images/platesImages/Slide4.jpg',
+    '../images/platesImages/Slide5.jpg',
+    '../images/platesImages/Slide6.jpg',
+    '../images/platesImages/Slide7.jpg',
+    '../images/platesImages/Slide8.jpg',
+    '../images/platesImages/Slide9.jpg',
+    '../images/platesImages/Slide10.jpg',
+    '../images/platesImages/Slide11.jpg',
+    '../images/platesImages/Slide12.jpg',
+    '../images/platesImagesError/Slide1.jpg',
+    '../images/platesImagesError/Slide2.jpg',
+    '../images/platesImagesError/Slide3.jpg',
+    '../images/platesImagesError/Slide4.jpg',
+    '../images/platesImagesError/Slide5.jpg',
+    '../images/platesImagesError/Slide6.jpg',
+    '../images/platesImagesError/Slide7.jpg',
+    '../images/platesImagesError/Slide8.jpg',
+    '../images/platesImagesError/Slide9.jpg',
+    '../images/platesImagesError/Slide10.jpg',
+    '../images/platesImagesError/Slide11.jpg',
+    '../images/platesImagesError/Slide12.jpg'
 ]
 template_path = [
-    "images/template/templateAB01.jpg",
-    "images/template/templateAB02.jpg",
-    "images/template/templateAC01.jpg",
-    "images/template/templateAC02.jpg"
+    "../images/template/templateAB01.jpg",
+    "../images/template/templateAB02.jpg",
+    "../images/template/templateAC01.jpg",
+    "../images/template/templateAC02.jpg"
 ]
 tolerance = 0.3
 path_image = []
@@ -78,7 +78,6 @@ def show_results():
     print("-" * width)
     print("\n\n")
 
-os.system('cls' if os.name == 'nt' else 'clear')
 print(color_title + 'Processando imagens, por favor aguarde!' + color_default)
 
 for index in range(0, len(images_path)):
@@ -147,8 +146,8 @@ for index in range(0, len(images_path)):
     #limitando os caracteres e o tamanho de letra para 3
     custom_config = r'-c tessedit_char_whitelist=ABC012 --psm 3' 
     # realizando a leitura do código
-    plateText = pytesseract.image_to_string("Recorte-%s"%images_path[index].replace("FotosPlacasComErro/", "FotosPlacasComErro-").replace("FotosPlacas/", "FotosPlacas-"), config=custom_config).replace(" ", "").replace("\n","")
-    path_image.append("Recorte-%s"%images_path[index].replace("FotosPlacasComErro/", "FotosPlacasComErro-").replace("FotosPlacas/", "FotosPlacas-")) #adicionando a lista o caminho da imagem
+    plateText = pytesseract.image_to_string("Recorte-%s"%images_path[index].replace("platesImagesError/", "platesImagesError-").replace("platesImages/", "platesImages-"), config=custom_config).replace(" ", "").replace("\n","")
+    path_image.append("Recorte-%s"%images_path[index].replace("platesImagesError/", "platesImagesError-").replace("platesImages/", "platesImages-")) #adicionando a lista o caminho da imagem
     image_model.append(plateText[:4]) # fatiamento do texto para evitar caracteres indesejados
 
 printPercentualFull(0)
@@ -157,7 +156,7 @@ print(color_title + "Analisando modelos de placa!" + color_default)
 for index in range(0, len(path_image)):    
     printPercentual(1)
 
-    duplicate = cv2.imread(path_image[index].replace("FotosPlacasComErro/", "FotosPlacasComErro-").replace("FotosPlacas/", "FotosPlacas-")) #imagem a comparar
+    duplicate = cv2.imread(path_image[index].replace("platesImagesError/", "platesImagesErro-").replace("platesImages/", "platesImages-")) #imagem a comparar
     model = image_model[index] #modelo para comparar
     #definindo qual modelo utilizar no loop
     if image_model[index] == "AB01":
@@ -169,13 +168,13 @@ for index in range(0, len(path_image)):
     elif image_model[index] == "AC02":
         template_model = template_path[3]
     #leitura do gabarito
-    gabaritoImage = cv2.imread(template_model)
+    template_image = cv2.imread(template_model)
     #subtraindo as duas imagens para zerar os pixels de cores iguais
-    difference = gabaritoImage - duplicate
+    difference = template_image - duplicate
     b, g, r = cv2.split(difference)
     # pintando pixel de vermelho
-    for y in range (0,gabaritoImage.shape[0],1):
-        for x in range (0,gabaritoImage.shape[1],1):
+    for y in range (0,template_image.shape[0],1):
+        for x in range (0,template_image.shape[1],1):
             if b[y,x] > 255*tolerance or g[y,x] > 255*tolerance or r[y,x] > 255*tolerance:
             #if b[y,x] !=0 or g[y,x] !=0 or r[y,x] !=0:
                 duplicate [y,x]=(0,0,255)
@@ -261,7 +260,7 @@ for index in range(0, len(path_image)):
             log_system.append(aux)
 
     cv2.imwrite("Draw-%s"%images_path[index].replace("/", "-"), duplicate) #salva no disco
-    #cv2.imshow("Original-%d-%s"%(index, template_model), gabaritoImage)
+    #cv2.imshow("Original-%d-%s"%(index, template_model), template_image)
     #cv2.imshow("Duplicate-%d-%s"%(index, template_model), duplicate)
     cv2.waitKey(0) #aguardo uma tecla para continuar
     cv2.destroyAllWindows() #fecha todas as janelas

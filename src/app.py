@@ -12,60 +12,47 @@ import pytesseract
 pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract'
 
 images_path = [
-    '../images/platesImages/Slide1.jpg',
-    '../images/platesImages/Slide2.jpg',
-    '../images/platesImages/Slide3.jpg',
-    '../images/platesImages/Slide4.jpg',
-    '../images/platesImages/Slide5.jpg',
-    '../images/platesImages/Slide6.jpg',
-    '../images/platesImages/Slide7.jpg',
-    '../images/platesImages/Slide8.jpg',
-    '../images/platesImages/Slide9.jpg',
-    '../images/platesImages/Slide10.jpg',
-    '../images/platesImages/Slide11.jpg',
-    '../images/platesImages/Slide12.jpg',
-    '../images/platesImagesError/Slide1.jpg',
-    '../images/platesImagesError/Slide2.jpg',
-    '../images/platesImagesError/Slide3.jpg',
-    '../images/platesImagesError/Slide4.jpg',
-    '../images/platesImagesError/Slide5.jpg',
-    '../images/platesImagesError/Slide6.jpg',
-    '../images/platesImagesError/Slide7.jpg',
-    '../images/platesImagesError/Slide8.jpg',
-    '../images/platesImagesError/Slide9.jpg',
-    '../images/platesImagesError/Slide10.jpg',
-    '../images/platesImagesError/Slide11.jpg',
-    '../images/platesImagesError/Slide12.jpg'
+    'platesImages/Slide1.jpg',
+    'platesImages/Slide2.jpg',
+    'platesImages/Slide7.jpg',
+    'platesImages/Slide8.jpg',
+    'platesImagesError/Slide1.jpg',
+    'platesImagesError/Slide2.jpg',
+    'platesImagesError/Slide7.jpg',
+    'platesImagesError/Slide8.jpg',
 ]
+
 template_path = [
-    "../images/template/templateAB01.jpg",
-    "../images/template/templateAB02.jpg",
-    "../images/template/templateAC01.jpg",
-    "../images/template/templateAC02.jpg"
+    "template/Template AB01.jpg",
+    "template/Template AB02.jpg",
+    "template/Template AC01.jpg",
+    "template/Template AC02.jpg"
 ]
-tolerance = 0.3
-path_image = []
-image_model = []
-template_model = ""
-log_system = []
+
+tolerance = 0.1
+images_align = []
+plate_model = []
+output_message = []
 color_default = "\033[0m"
-color_yellow = "\033[33m"
 color_green = "\033[32m"
 color_red = "\033[31m"
 color_title = "\033[1m"
-color_percentual = "\033[90m"
 
-def printPercentual(type):
-    if type == 0:
-        print(color_percentual + "\033[K", "[ {:<30} ] {}%\033[0m".format("." * round((index * (30 / len(images_path)))), round((index * (100 / len(images_path))))), end="\r") #barrinha de porcentagem
-    elif type == 1:
-        print(color_percentual + "\033[K", "[ {:<30} ] {}%\033[0m".format("." * round((index * (30 / len(path_image)))), round((index * (100 / len(path_image))))), end="\r") # carregamento iniciado
-
-def printPercentualFull(type):
-    if type == 0:        
-        print(color_percentual + "\033[K", "[ {:<30} ] {}%\033[0m\n\n".format("." * 30, 100), end="\r") #carregamento em 100%    
-    elif type == 1:
-        print(color_percentual + "\033[K", "[ {:<30} ] {}%\033[0m\n\n".format("." * 30, 100), end="\r") # termina contador em 100%
+# função para teste de coordenadas
+def coord_test(x_coord, y_coord, message, invertPos, duplicate): 
+    x=x_coord
+    y=y_coord 
+    if invertPos == True:
+        (b,g,r) = duplicate[x,y]
+    else:               
+        (b,g,r) = duplicate[y,x]
+    cv2.circle(duplicate, (y,x), 1, (0, 255, 0), -1)
+    # se vermelho no ponto x:y , existe erros na imagem
+    if (b==0 and g==0 and r==255): 
+        auxT.append(message)
+        return False                     
+    else: # caso não tenha pontos vermelhor, é aceitável
+        return True
 
 def show_results():  
     width = 30+15  
@@ -73,17 +60,17 @@ def show_results():
     for i in range(0, len(images_path)):
         print("{:<30} {:^15}".format(
             images_path[i][11:].replace("/", "").replace(".jpg", ""), 
-            log_system[i]
+            output_message[i]
         ))
     print("-" * width)
     print("\n\n")
 
-print(color_title + 'Processando imagens, por favor aguarde!' + color_default)
+os.system('cls' if os.name == 'nt' else 'clear')
+print(color_title + 'Processing images...' + color_default)
 
-for index in range(0, len(images_path)):
-    printPercentual(0)    
+for imageIndex in range(0, len(images_path)):
     cv2.destroyAllWindows()
-    archivePath=images_path[index] #lê archivePath de acordo com o ciclo for
+    archivePath=images_path[imageIndex] #lê archivePath de acordo com o ciclo for
     original = cv2.imread(archivePath) #colorida
     originalBackup = cv2.imread(archivePath) #colorida
     img = cv2.imread(archivePath,0) #monocromática = binária
@@ -138,134 +125,135 @@ for index in range(0, len(images_path)):
     xf=pontoInicial[0]+1
     yi=pontoInicial[1]
     yf=pontoInicial[1]+alturaPlaca
-    recorte = originalBackupRotacionada[yi:yf,xi:xf]
+    cut = originalBackupRotacionada[yi:yf,xi:xf]
     # se a imagem não estiver com o tamanho correto corrija
-    if recorte.shape[0] != 295: 
-        recorte = originalBackupRotacionada[yi-4:yf,xi:xf]
-    cv2.imwrite("Recorte-%s"%images_path[index].replace("/", "-"), recorte) #salva no disco    
+    if cut.shape[0] != 295: 
+        cut = originalBackupRotacionada[yi-4:yf,xi:xf]
+    cv2.imwrite("cutResult/cut-%s"%images_path[imageIndex].replace("/", "-"), cut) #salva no disco    
     #limitando os caracteres e o tamanho de letra para 3
     custom_config = r'-c tessedit_char_whitelist=ABC012 --psm 3' 
     # realizando a leitura do código
-    plateText = pytesseract.image_to_string("Recorte-%s"%images_path[index].replace("platesImagesError/", "platesImagesError-").replace("platesImages/", "platesImages-"), config=custom_config).replace(" ", "").replace("\n","")
-    path_image.append("Recorte-%s"%images_path[index].replace("platesImagesError/", "platesImagesError-").replace("platesImages/", "platesImages-")) #adicionando a lista o caminho da imagem
-    image_model.append(plateText[:4]) # fatiamento do texto para evitar caracteres indesejados
+    plateText = pytesseract.image_to_string("cutResult/cut-%s"%images_path[imageIndex].replace("platesImagesError/", "platesImagesError-").replace("platesImages/", "platesImages-"), config=custom_config).replace(" ", "").replace("\n","")
+    images_align.append("cutResult/cut-%s"%images_path[imageIndex].replace("platesImagesError/", "platesImagesError-").replace("platesImages/", "platesImages-")) #adicionando a lista o caminho da imagem
+    plate_model.append(plateText[:4]) # fatiamento do texto para evitar caracteres indesejados
+    
+print(color_green + "OK\n" + color_default)
+print(color_title + "Analyzing plates model..." + color_default)
 
-printPercentualFull(0)
-print(color_title + "Analisando modelos de placa!" + color_default)
+for imageIndex in range(0, len(images_align)):    
 
-for index in range(0, len(path_image)):    
-    printPercentual(1)
-
-    duplicate = cv2.imread(path_image[index].replace("platesImagesError/", "platesImagesErro-").replace("platesImages/", "platesImages-")) #imagem a comparar
-    model = image_model[index] #modelo para comparar
+    duplicate = cv2.imread(images_align[imageIndex].replace("platesImagesError/", "platesImagesError-").replace("platesImages/", "platesImages-")) #imagem a comparar
+    model = plate_model[imageIndex] #modelo para comparar
     #definindo qual modelo utilizar no loop
-    if image_model[index] == "AB01":
-        template_model = template_path[0]
-    elif image_model[index] == "AB02":
-        template_model = template_path[1]
-    elif image_model[index] == "AC01":
-        template_model = template_path[2]
-    elif image_model[index] == "AC02":
-        template_model = template_path[3]
+    if plate_model[imageIndex] == "AB01":
+        gabaritoModel = template_path[0]
+    elif plate_model[imageIndex] == "AB02":
+        gabaritoModel = template_path[1]
+    elif plate_model[imageIndex] == "AC01":
+        gabaritoModel = template_path[2]
+    elif plate_model[imageIndex] == "AC02":
+        gabaritoModel = template_path[3]
+    
     #leitura do gabarito
-    template_image = cv2.imread(template_model)
+    gabaritoImage = cv2.imread(gabaritoModel)
+
     #subtraindo as duas imagens para zerar os pixels de cores iguais
-    difference = template_image - duplicate
+    difference = gabaritoImage - duplicate
     b, g, r = cv2.split(difference)
+    
     # pintando pixel de vermelho
-    for y in range (0,template_image.shape[0],1):
-        for x in range (0,template_image.shape[1],1):
-            if b[y,x] > 255*tolerance or g[y,x] > 255*tolerance or r[y,x] > 255*tolerance:
-            #if b[y,x] !=0 or g[y,x] !=0 or r[y,x] !=0:
+    for y in range (0,gabaritoImage.shape[0],1):
+        for x in range (0,gabaritoImage.shape[1],1):
+            if r[y,x] > 255*tolerance:
                 duplicate [y,x]=(0,0,255)
+            if g[y,x] > 255*tolerance:
+                duplicate [y,x]=(0,0,255)
+            if b[y,x] > 255*tolerance:
+                duplicate [y,x]=(0,0,255)
+
     if cv2.countNonZero(b) != 0 or cv2.countNonZero(g) != 0 or cv2.countNonZero(r) != 0:        
         auxT=[] #auxiliar temporaria de mensagem
         aux="" #auxiliar para concatenação de mensagens
 
-        # função para teste de coordenadas
-        def coordTest(x_coord,y_coord, message, invertPos, duplicate): 
-            x=x_coord
-            y=y_coord 
-            if invertPos == True:
-                (b,g,r) = duplicate[x,y]
-            else:               
-                (b,g,r) = duplicate[y,x]
-            #cv2.circle(duplicate, (y,x), 1, (0, 255, 0), -1)
-            # se vermelho no ponto x:y , existe erros na imagem
-            if (b==0 and g==0 and r==255): 
-                auxT.append(message)
-                return False                     
-            else: # caso não tenha pontos vermelhor, é aceitavel
-                return True
-
         # placas de modelo ...
-        if model == "AB01": 
-            a = coordTest(80,  80,  "Q", False, duplicate)
-            b = coordTest(65,  55,  "Q", False, duplicate)
-            c = coordTest(95,  110, "Q", False, duplicate)
-            d = coordTest(235, 300, "R", True,  duplicate)
-            e = coordTest(210, 400, "R", True,  duplicate)
-            f = coordTest(100, 400, "E", True,  duplicate)
-            g = coordTest(195, 500, "R", True,  duplicate)
+        if model == "AB01":
+            # Test if square matches the template
+            a = coord_test(80,  80,  "SQUARE", False, duplicate)
+            b = coord_test(65,  55,  "SQUARE", False, duplicate)
+            c = coord_test(95,  110, "SQUARE", False, duplicate)
 
-            #se não tiver erros
+            # Test if rectangle matches the template
+            d = coord_test(235, 300, "RECTANGLE", True,  duplicate)
+            e = coord_test(210, 400, "RECTANGLE", True,  duplicate)
+            f = coord_test(195, 500, "RECTANGLE", True,  duplicate)
+            g = coord_test(100, 400, "ERROR", True,  duplicate)
+
+            # Check if there is no error
             if a and b and c and d and e and f and g == True:
-                aux = color_green + "Aceitavel" + color_default
+                aux = color_green + "Approved" + color_default
             else:       
                 aux = color_red + " ".join(sorted(set(auxT))) + color_default        
-            log_system.append(aux) #adiciona a mensagem a lista de log_system
+            output_message.append(aux) #adiciona a mensagem a lista de output_message
 
         if model == "AB02":
-            a = coordTest(125, 119, "Q", False, duplicate)
-            b = coordTest(150, 90,  "Q", False, duplicate)
-            c = coordTest(175, 63,  "Q", False, duplicate)
-            d = coordTest(125, 284, "R", True,  duplicate)
-            e = coordTest(150, 400, "R", True,  duplicate)
-            f = coordTest(175, 500, "R", True,  duplicate)
+            # Test if square matches the template
+            a = coord_test(125, 119, "SQUARE", False, duplicate)
+            b = coord_test(150, 90,  "SQUARE", False, duplicate)
+            c = coord_test(175, 63,  "SQUARE", False, duplicate)
+
+            # Test if rectangle matches the template
+            d = coord_test(125, 284, "RECTANGLE", True,  duplicate)
+            e = coord_test(150, 400, "RECTANGLE", True,  duplicate)
+            f = coord_test(175, 500, "RECTANGLE", True,  duplicate)
 
             if a and b and c and d and e and f == True:
-                aux = color_green + "Aceitavel" + color_default
+                aux = color_green + "Approved" + color_default
             else:
                 aux = color_red + " ".join(sorted(set(auxT))) + color_default 
-            log_system.append(aux)
+            output_message.append(aux)
 
         if model == "AC01":
-            a = coordTest(220, 110, "Q", False, duplicate)
-            b = coordTest(195, 85,  "Q", False, duplicate)
-            c = coordTest(100, 85,  "E", False, duplicate)
-            d = coordTest(245, 135, "Q", False, duplicate)
-            e = coordTest(55,  455, "R", True,  duplicate)
-            f = coordTest(150, 430, "R", True,  duplicate)
-            g = coordTest(235, 405, "R", True,  duplicate)
+            # Test if square matches the template
+            a = coord_test(220, 110, "SQUARE", False, duplicate)
+            b = coord_test(195, 85,  "SQUARE", False, duplicate)
+            c = coord_test(245, 135, "SQUARE", False, duplicate)
+
+            # Test if rectangle matches the template
+            d = coord_test(55,  455, "RECTANGLE", True,  duplicate)
+            e = coord_test(150, 430, "RECTANGLE", True,  duplicate)
+            f = coord_test(235, 405, "RECTANGLE", True,  duplicate)
+            g = coord_test(100, 85,  "ERROR", False, duplicate)
             
             if a and b and c and d and e and f and g == True:
-                aux = color_green + "Aceitavel" + color_default
+                aux = color_green + "Approved" + color_default
             else:
                 aux = color_red + " ".join(sorted(set(auxT))) + color_default 
-            log_system.append(aux)
+            output_message.append(aux)
 
         if model == "AC02":
-            a = coordTest(160, 180, "Q", False, duplicate)
-            b = coordTest(125, 260, "Q", False, duplicate)
-            c = coordTest(125, 100, "E", False, duplicate)
-            d = coordTest(175, 310, "Q", True,  duplicate)
-            e = coordTest(55,  460, "E", True,  duplicate)
-            f = coordTest(150, 435, "R", True,  duplicate)
-            g = coordTest(245, 410, "R", True,  duplicate)
+            a = coord_test(160, 180, "SQUARE", False, duplicate)
+            b = coord_test(125, 260, "SQUARE", False, duplicate)
+            c = coord_test(125, 100, "ERROR", False, duplicate)
+            d = coord_test(175, 310, "SQUARE", True,  duplicate)
+            e = coord_test(55,  460, "ERROR", True,  duplicate)
+            f = coord_test(150, 435, "RECTANGLE", True,  duplicate)
+            g = coord_test(245, 410, "RECTANGLE", True,  duplicate)
             
             if a and b and c and d and e and f and g == True:
-                aux = color_green + "Aceitavel" + color_default
+                aux = color_green + "Approved" + color_default
             else:
                 aux = color_red + " ".join(sorted(set(auxT))) + color_default 
-            log_system.append(aux)
+            output_message.append(aux)
+    
+    
+    cv2.imwrite("drawResult/Draw-%s"%images_path[imageIndex].replace("/", "-"), duplicate) #salva no disco
+    # cv2.imshow("Original-%d-%s"%(imageIndex, gabaritoModel), gabaritoImage)
+    cv2.imshow("Duplicate-%d-%s"%(imageIndex, gabaritoModel), duplicate)
+    # cv2.waitKey(0)
+    cv2.destroyAllWindows()
 
-    cv2.imwrite("Draw-%s"%images_path[index].replace("/", "-"), duplicate) #salva no disco
-    #cv2.imshow("Original-%d-%s"%(index, template_model), template_image)
-    #cv2.imshow("Duplicate-%d-%s"%(index, template_model), duplicate)
-    cv2.waitKey(0) #aguardo uma tecla para continuar
-    cv2.destroyAllWindows() #fecha todas as janelas
+print(color_green + "OK\n" + color_default)
+print(color_title + "Results" + color_default)
 
-printPercentualFull(1)
-print(color_title + "Resultados" + color_default)
-# imprime resultados
+# Show the results
 show_results()
